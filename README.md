@@ -14,7 +14,7 @@ Here's an example:
     q.add ->
         finalTask q.wait()
         
-    q.run ->
+    q.end ->
         console.log('All three tasks should be completed')
         
     q.error (err) ->
