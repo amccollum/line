@@ -79,8 +79,8 @@
         
         end: (fn) ->
             _context = null
-            @callback = fn
-            @next()
+            @callback = fn            
+            process.nextTick => @next()
             return
             
 )(exports ? (@['q'] = {}))

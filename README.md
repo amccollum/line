@@ -14,10 +14,11 @@ Here's an example:
     q.add ->
         finalTask q.wait()
         
-    q.end ->
-        console.log('All three tasks should be completed')
-        
     q.error (err) ->
         console.log('Oh no! One of the tasks had an error!')
         throw err 
+
+    q.end ->
+        console.log('All three tasks should be completed')
+        
 ```
