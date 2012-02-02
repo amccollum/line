@@ -3,21 +3,23 @@
     _running = null
 
     q.add = (block) ->
-        _context = new Context(_running) if not _context
+        _context = new q.Context(_running) if not _context
         _context.add(block)
         return
     
     q.error = (fn) ->
-        _context = new Context(_running) if not _context
+        _context = new q.Context(_running) if not _context
         _context.error = fn
         return
     
-    q.run = (fn) ->
-        _context = new Context(_running) if not _context
-        _context.run(fn)
+    q.end = (fn) ->
+        _context = new q.Context(_running) if not _context
+        _context.end(fn)
         return
     
     q.wait = (fn) -> _running.wait(fn)
+
+    q.kill = () -> _running.kill.apply(_running, arguments)
 
     class q.Context
         constructor: (@parent) ->
@@ -32,6 +34,20 @@
             @blocks.push(block)
             return
         
+        kill: ->
+            args = Array.prototype.slice.call(arguments)
+            error = @error
+            parent = @parent
+            
+            while not error and parent
+                error = parent.error
+                parent = parent.parent
+        
+            if error
+                @errored = not error.apply(this, args)
+            else
+                @errored = true
+        
         wait: (fn) ->
             @waiting++
         
@@ -40,18 +56,9 @@
                 @results.push(args)
             
                 fn.apply(this, args) if fn
-            
+    
                 if args[0] and not @errored
-                    error = @error
-                    parent = @parent
-                    while not error and parent
-                        error = parent.error
-                        parent = parent.parent
-                    
-                    if error
-                        @errored = not error.apply(this, args)
-                    else
-                        @errored = true
+                    @kill.apply(this, args)
             
                 if not --@waiting and not @errored
                     args.shift()
@@ -70,7 +77,7 @@
         
             return
         
-        run: (fn) ->
+        end: (fn) ->
             _context = null
             @callback = fn
             @next()

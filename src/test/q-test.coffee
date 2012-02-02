@@ -48,7 +48,7 @@ vows.add 'q'
         
         'running the q':
             topic: (results) ->
-                q.run =>
+                q.end =>
                     @success(results)
                     
             'should add all the results': (results) -> equal results.length, 3
