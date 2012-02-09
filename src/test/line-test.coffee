@@ -1,6 +1,6 @@
 assert = require('assert')
 vows = require('vows')
-q = require('q')
+line = require('line')
 
 equal = assert.equal
 
@@ -12,15 +12,15 @@ timeout = (delay, fn) ->
     setTimeout(fn, delay)
     return
 
-vows.add 'q'
+vows.add 'line'
     'simple test':
         topic: []
         'the result array should start out empty': (results) -> equal results.length, 0
         
         'the 10ms result':
             topic: (results) ->
-                q.add =>
-                    timeout 10, q.wait =>
+                line =>
+                    timeout 10, line.wait =>
                         results.push(0)
                         @success(results)
             
@@ -28,8 +28,8 @@ vows.add 'q'
             
         'the 100ms result':
             topic: (results) ->
-                q.add =>
-                    timeout 100, q.wait =>
+                line.add =>
+                    timeout 100, line.wait =>
                         results.push(1)
                         @success(results)
             
@@ -37,8 +37,8 @@ vows.add 'q'
 
         'the 50ms result':
             topic: (results) ->
-                q.add =>
-                    timeout 50, q.wait =>
+                line =>
+                    timeout 50, line.wait =>
                         results.push(2)
                         @success(results)
             
@@ -48,7 +48,7 @@ vows.add 'q'
         
         'running the q':
             topic: (results) ->
-                q.end =>
+                line.run =>
                     @success(results)
                     
             'should add all the results': (results) -> equal results.length, 3

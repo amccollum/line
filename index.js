@@ -1,1 +1,1 @@
-module.exports = require('./lib/q');
+module.exports = require('./lib/line');

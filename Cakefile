@@ -11,7 +11,7 @@ execCmds = (cmds) ->
 
 task 'build', 'Build the library', ->
     execCmds [
-        'coffee --bare --output ./lib ./src/q/*.coffee',
+        'coffee --bare --output ./lib ./src/line/*.coffee',
     ]
 
 task 'test', 'Build and run the test suite', ->
@@ -21,7 +21,7 @@ task 'test', 'Build and run the test suite', ->
         'ln -sfn node_modules/ender-vows node_modules/vows',
         'ln -sfn node_modules test/node_modules',
 
-        'ln -sfn . node_modules/q',
+        'ln -sfn . node_modules/line',
         'node_modules/.bin/vows ./test/*.js'
-        'unlink node_modules/q',
+        'unlink node_modules/line',
     ]

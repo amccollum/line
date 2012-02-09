@@ -1,24 +1,24 @@
-q
+line
 ===
-Q is designed to work with CoffeeScript/
+Line is designed to work with CoffeeScript.
 
 Here's an example:
 
 ```js
-    q.add ->
-        taskWithCallback q.wait()
+    line ->
+        taskWithCallback line.wait()
         
-    q.add (firstTaskResult) ->
-        anotherTask firstTaskResult, q.wait()
+    line (firstTaskResult) ->
+        anotherTask firstTaskResult, line.wait()
     
-    q.add ->
-        finalTask q.wait()
+    line ->
+        finalTask line.wait()
         
-    q.error (err) ->
+    line.catch (err) ->
         console.log('Oh no! One of the tasks had an error!')
         throw err 
 
-    q.end ->
+    line.run ->
         console.log('All three tasks should be completed')
         
 ```

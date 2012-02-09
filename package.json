@@ -1,14 +1,14 @@
 {
-    "name": "q",
+    "name": "line",
     "version": "0.0.1",
     "description": "Control flow like a boss",
     "keywords": ["ender", "flow", "control", "async"],
     "author": "Andrew McCollum <amccollum@gmail.com>",
-    "url": "http://github.com/amccollum/q",
-    "repositories": [{ "type": "git", "url": "http://github.com/amccollum/q.git" }],
+    "url": "http://github.com/amccollum/line",
+    "repositories": [{ "type": "git", "url": "http://github.com/amccollum/line.git" }],
     "licenses": [{ "type": "MIT", "url": "http://opensource.org/licenses/mit-license.php" }],
 
-    "main": "lib/q.js",
+    "main": "lib/line.js",
     "directories": { "lib": "lib" },
     "devDependencies": {
         "coffee-script": "*",
