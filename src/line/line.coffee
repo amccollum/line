@@ -85,7 +85,7 @@ line.add = (block) ->
     _context.add(block)
     return
 
-line.catch = (fn) ->
+line.error = (fn) ->
     _context = new line(_running) if not _context
     _context.errorCallback = fn
     return
