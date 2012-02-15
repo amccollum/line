@@ -24,22 +24,21 @@ class line
     
         return =>
             args = Array.prototype.slice.call(arguments)
-            @results.push(args)
         
-            if args[0] and not @stopped
+            if not @stopped and args[0]
                 @stop.apply(this, args)
-        
-            if not --@waiting and not @stopped
-                args.shift()
+            
+            # Shift off the error arg
+            args.shift()
+            
+            if not @stopped
+                @results.push(args)
                 fn.apply(this, args) if fn
-                @next(args)
+                @next(args) if not --@waiting
 
     stop: ->
+        @stopped = true
         args = Array.prototype.slice.call(arguments)
-        
-        if not args.length
-            @stopped = true
-            return
             
         errorCallback = @errorCallback
         parent = @parent
@@ -49,24 +48,20 @@ class line
             parent = parent.parent
     
         if errorCallback
-            @stopped = not errorCallback.apply(this, args)
-        else
-            @stopped = true
+            errorCallback.apply(this, args)
     
     next: (args) ->
-        @stopped = false
-        
         if @blocks.length
             _running = this
         
-            fn = @wait()
+            waitCallback = @wait()
             
             try
                 result = @blocks.shift().apply(this, args)
-                fn(null, result)
+                waitCallback(null, result)
                 
             catch e
-                fn(e)
+                waitCallback(e)
                 
         else if @successCallback
             @successCallback.apply(this, args)
@@ -75,7 +70,16 @@ class line
     
     run: (fn) ->
         _context = null
-        @successCallback = fn if fn
+        
+        if @parent
+            waitCallback = @parent.wait()
+        
+        @successCallback = ->
+            if @parent
+                waitCallback()
+                
+            fn.apply(this, arguments) if fn
+            
         process.nextTick => @next()
         return
         

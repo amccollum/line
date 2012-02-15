@@ -52,3 +52,38 @@ vows.add 'line'
                     @success(results)
                     
             'should add all the results': (results) -> equal results.length, 3
+
+    'nested lines':
+        topic: []
+        'with nested lines':
+            topic: (results) ->
+                line =>
+                    process.nextTick line.wait =>
+                        results.push(0)
+                        
+                    line =>
+                        process.nextTick line.wait =>
+                            results.push(2)
+
+                    line =>
+                        process.nextTick line.wait =>
+                            results.push(3)
+
+                    line.run()
+
+                    process.nextTick line.wait =>
+                        results.push(1)
+
+                line =>
+                    process.nextTick line.wait =>
+                        results.push(4)
+                
+                line.run =>
+                    @success(results)
+            
+            'should have all the results in the right order': (results) ->
+                equal results[0], 0
+                equal results[1], 1
+                equal results[2], 2
+                equal results[3], 3
+                equal results[4], 4
