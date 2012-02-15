@@ -26,13 +26,12 @@ class line
             args = Array.prototype.slice.call(arguments)
             @results.push(args)
         
-            fn.apply(this, args) if fn
-
             if args[0] and not @stopped
                 @stop.apply(this, args)
         
             if not --@waiting and not @stopped
                 args.shift()
+                fn.apply(this, args) if fn
                 @next(args)
 
     stop: ->
