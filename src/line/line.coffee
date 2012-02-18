@@ -10,8 +10,7 @@ class line
         @parent = parent
         @blocks = []
         @results = {}
-        @successCallback = null
-        @errorCallback = null
+        @error = null
 
         @stopped = false
         @waiting = 0
@@ -23,7 +22,7 @@ class line
     wait: (name, fn) ->
         @waiting++
     
-        if not name or typeof name == 'function'
+        if name == undefined or typeof name == 'function'
             fn = name
             name = ++@id
             
@@ -41,58 +40,52 @@ class line
             args.shift()
             
             if not @stopped
-                @results[name] = args
+                if name != null
+                    @results[name] = args
+                    
                 fn.apply(this, args) if fn
                 @next() if not --@waiting
 
     stop: ->
-        @stopped = true
         args = Array.prototype.slice.call(arguments)
+        @stopped = true
             
-        errorCallback = @errorCallback
+        error = @error
         parent = @parent
         
-        while not errorCallback and parent
-            errorCallback = parent.errorCallback
+        while not error and parent
+            error = parent.error
             parent = parent.parent
     
-        if errorCallback
-            errorCallback.apply(this, args)
+        if error
+            error.apply(this, args)
     
-    next: ->
+    next: (fn) ->
         args = @results[@resultId or @id]
         @resultId = null
 
         if @blocks.length
-            waitCallback = @wait()
+            block = @blocks.shift()
+            done = @wait(null, fn)
             
             try
                 _running = this
-                result = @blocks.shift().apply(this, args)
+                result = block.apply(this, args)
                 _running = null
 
-                waitCallback(null, result)
+                done(null, result)
                 
             catch e
-                waitCallback(e)
-                
-        else if @successCallback
-            @successCallback.apply(this, args)
+                done(e)
     
         return
     
     run: (fn) ->
         _context = null
         
-        if @parent
-            waitCallback = @parent.wait()
+        @add(fn) if fn
+        @add(@parent.wait(null)) if @parent
         
-        @successCallback = ->
-            if @parent
-                waitCallback()
-                
-            fn.apply(this, arguments) if fn
-            
         process.nextTick => @next()
         return
         
@@ -103,7 +96,7 @@ line.add = (fn) ->
 
 line.error = (fn) ->
     _context = new line(_running) if not _context
-    _context.errorCallback = fn
+    _context.error = fn
     return
 
 line.run = (fn) ->
