@@ -6,9 +6,10 @@ class line
         if @constructor != line
             return line.add.apply(this, arguments)
         
+        @id = 0
         @parent = parent
         @blocks = []
-        @results = []
+        @results = {}
         @successCallback = null
         @errorCallback = null
 
@@ -19,8 +20,16 @@ class line
         @blocks.push(block)
         return
     
-    wait: (fn) ->
+    wait: (name, fn) ->
         @waiting++
+    
+        if not name or typeof name == 'function'
+            fn = name
+            name = ++@id
+            
+        else if name == true
+            name = ++@id
+            @resultId = name
     
         return =>
             args = Array.prototype.slice.call(arguments)
@@ -32,9 +41,9 @@ class line
             args.shift()
             
             if not @stopped
-                @results.push(args)
+                @results[name] = args
                 fn.apply(this, args) if fn
-                @next(args) if not --@waiting
+                @next() if not --@waiting
 
     stop: ->
         @stopped = true
@@ -50,14 +59,18 @@ class line
         if errorCallback
             errorCallback.apply(this, args)
     
-    next: (args) ->
+    next: ->
+        args = @results[@resultId or @id]
+        @resultId = null
+
         if @blocks.length
-            _running = this
-        
             waitCallback = @wait()
             
             try
+                _running = this
                 result = @blocks.shift().apply(this, args)
+                _running = null
+
                 waitCallback(null, result)
                 
             catch e
@@ -83,9 +96,9 @@ class line
         process.nextTick => @next()
         return
         
-line.add = (block) ->
+line.add = (fn) ->
     _context = new line(_running) if not _context
-    _context.add(block)
+    _context.add(fn)
     return
 
 line.error = (fn) ->

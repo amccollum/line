@@ -11,6 +11,10 @@ if not vows.add
 timeout = (delay, fn) ->
     setTimeout(fn, delay)
     return
+    
+echo = (val, fn) ->
+    process.nextTick ->
+        fn(null, val)
 
 vows.add 'line'
     'simple test':
@@ -87,3 +91,29 @@ vows.add 'line'
                 equal results[2], 2
                 equal results[3], 3
                 equal results[4], 4
+
+    'arguments to wait()':
+        topic: ->
+            success = @success
+            
+            line ->
+                echo 1, line.wait('a')
+                echo 2, line.wait()
+                echo 3, line.wait(true)
+                echo 4, line.wait('b')
+                echo 5, line.wait('c')
+                echo 6, line.wait()
+                
+            line (result) -> @results['test'] = result
+
+            line.run -> success(@results)
+        
+        'should be added correctly': (results) ->
+            equal results['a'], 1
+            equal results[2], 2
+            equal results[3], 3
+            equal results['b'], 4
+            equal results['c'], 5
+            equal results[4], 6
+            equal results['test'], 3
+
