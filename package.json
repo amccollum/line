@@ -1,6 +1,6 @@
 {
     "name": "line",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Control flow like a boss",
     "keywords": ["ender", "flow", "control", "async"],
     "author": "Andrew McCollum <amccollum@gmail.com>",
