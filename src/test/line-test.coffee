@@ -110,10 +110,10 @@ vows.add 'line'
         
         'should be added correctly': (results) ->
             equal results['a'], 1
-            equal results[1], 2
-            equal results[2], 3
+            equal results[2], 2
+            equal results[3], 3
             equal results['b'], 4
             equal results['c'], 5
-            equal results[3], 6
+            equal results[4], 6
             equal results['test'], 3
 

@@ -31,25 +31,41 @@ class line
             @resultId = name
     
         return =>
+            @waiting--
+            return if @stopped
+
             args = Array.prototype.slice.call(arguments)
         
-            if not @stopped and args[0]
-                @stop.apply(this, args)
+            if args[0]
+                @fail.apply(this, args)
             
-            # Shift off the error arg
-            args.shift()
-            
-            if not @stopped
+            else
+                # Shift off the error arg
+                args.shift()
+
                 if name != null
                     @results[name] = args
+            
+                try
+                    _running = this
+                    fn.apply(this, args) if fn
+                    _running = null
                     
-                fn.apply(this, args) if fn
-                @next() if not --@waiting
+                catch e
+                    @fail(e)
+                
+                # The line may be stopped in fn
+                @next() if not @waiting and not @stopped 
 
-    stop: ->
+    fail: (err) ->
         args = Array.prototype.slice.call(arguments)
         @stopped = true
-            
+        
+        if err instanceof Error
+            console.log(err.stack)
+        else
+            console.log(args)
+
         error = @error
         parent = @parent
         
@@ -60,13 +76,20 @@ class line
         if error
             error.apply(this, args)
     
+    end: (fn) ->
+        @stopped = true
+        @blocks = @blocks.slice(-1)
+        @next(fn)
+        
+        return
+    
     next: (fn) ->
         args = @results[@resultId or @id]
         @resultId = null
 
         if @blocks.length
             block = @blocks.shift()
-            done = @wait(null, fn)
+            done = @wait(fn)
             
             try
                 _running = this
@@ -105,7 +128,7 @@ line.run = (fn) ->
     return
 
 line.wait = (fn) -> _running.wait(fn)
-
-line.stop = -> _running.stop.apply(_running, arguments)
+line.end = (fn) -> _running.end(fn)
+line.fail = -> _running.fail.apply(_running, arguments)
 
 module.exports = line
