@@ -117,3 +117,39 @@ vows.add 'line'
             equal results[4], 6
             equal results['test'], 3
 
+    'nested lines':
+        topic: ->
+            success = @success
+            
+            result = []
+            line ->
+                result.push(0)
+                
+                line -> echo 1, line.wait()
+                line (one) -> echo 2, line.wait()
+                line (two) -> echo 3, line.wait()
+                line.run (three) =>
+                    result.push(2)
+                    return three
+                    
+                result.push(1)
+                return
+                    
+            line (three) ->
+                result.push(three)
+                
+            line ->
+                result.push(4)
+                
+            line.run ->
+                success(result)
+                
+        'should make their parents wait ': (result) ->
+            equal result[4], 4
+            
+        'should be able to pass on results': (result) ->
+            equal result[0], 0
+            equal result[1], 1
+            equal result[2], 2
+            equal result[3], 3
+

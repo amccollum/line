@@ -35,7 +35,7 @@ class line
             return if @stopped
 
             args = Array.prototype.slice.call(arguments)
-        
+            
             if args[0]
                 @fail.apply(this, args)
             
@@ -106,8 +106,14 @@ class line
     run: (fn) ->
         _context = null
         
-        @add(fn) if fn
-        @add(@parent.wait(null)) if @parent
+        @add fn if fn
+        
+        if @parent
+            done = @parent.wait()
+            @add =>
+                args = Array.prototype.slice.call(arguments)
+                args.unshift(null)
+                done.apply(this, args)
         
         process.nextTick => @next()
         return
