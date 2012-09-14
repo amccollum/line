@@ -1,29 +1,33 @@
 line
 ===
-Line is designed to work with CoffeeScript.
+Line is flow control designed to work with CoffeeScript.
 
 Here's an example:
 
 ```CoffeeScript
-line ->
-    fs.readdir 'my_dir', line.wait()
-    
-line (files) ->
-    fs.readFile "my_dir/#{files[0]}", 'utf8', line.wait('f1')
-    fs.readFile "my_dir/#{files[1]}", 'utf8', line.wait('f2')
-    fs.stat "my_dir/#{files[2]}", line.wait()
+Line = require('line').Line
 
-line (stats) ->
-    console.log('Contents of the first file:', @results.f1)
-    console.log('Contents of the second file:', @results.f2)
-    console.log('Result of fs.stat for the third file:', stats)
-    
-    # If there is no line.wait() call, the callback will complete immediately
-    
-line.error (err) ->
-    console.log('Oh no! One of the callbacks showed an error!')
+data2 = null
 
-line.run ->
-    console.log('All the tasks completed without errors.')
-        
+l = new Line
+	error: (err) -> console.log('Oh no! One of the callbacks had an error:', err)
+		
+	-> fs.readdir 'my_dir', @wait()
+    
+	(files) ->
+		# Callback results can be named, or observed
+	    fs.readFile "my_dir/#{files[0]}", 'utf8', @wait('data1')
+	    fs.readFile "my_dir/#{files[1]}", 'utf8', @wait (data) -> data2 = data
+	    fs.stat "my_dir/#{files[2]}", @wait()
+
+	# By default, the result of the last wait() call will be passed on
+	(stats) ->
+	    console.log('Contents of the first file:', @results.data1)
+	    console.log('Contents of the second file:', data2)
+	    console.log('Result of fs.stat for the third file:', stats)
+    
+    # If there is no wait() call, the callback will complete immediately
+
+# Blocks can also be added later
+l.add -> console.log('All the tasks completed without errors.')
 ```

@@ -1,8 +1,6 @@
 fs = require('fs')
 {spawn, exec} = require('child_process')
 
-package = JSON.parse(fs.readFileSync('package.json', 'utf8'))
-
 execCmds = (cmds) ->
     exec cmds.join(' && '), (err, stdout, stderr) ->
         output = (stdout + stderr).trim()
@@ -17,11 +15,11 @@ task 'build', 'Build the library', ->
 task 'test', 'Build and run the test suite', ->
     execCmds [
         'coffee --bare --output ./test ./src/test/*.coffee',
-        'npm install --dev',
-        'ln -sfn node_modules/ender-vows node_modules/vows',
-        'ln -sfn node_modules test/node_modules',
+        #'npm install --dev',
+        'ln -sfn ender-vows node_modules/vows',
+        'ln -sfn ../node_modules test/node_modules',
 
         'ln -sfn . node_modules/line',
-        'node_modules/.bin/vows ./test/*.js'
+        'node_modules/.bin/vows --spec ./test/*.js'
         'unlink node_modules/line',
     ]

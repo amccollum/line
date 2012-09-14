@@ -1,140 +1,177 @@
-_context = null
-_running = null
+!((name, definition) ->
+    if typeof module == 'object' and module.exports then module.exports = definition()
+    else if typeof define == 'function' and define.amd then define(name, definition)
+    else @[name] = definition()
+    return
+)('line', ->
+    
+    events = require('events')
+    line = {}
 
-class line
-    constructor: (parent) ->
-        if @constructor != line
-            return line.add.apply(this, arguments)
-        
-        @id = 0
-        @parent = parent
-        @blocks = []
-        @results = {}
-        @error = null
-
-        @stopped = false
-        @waiting = 0
+    line.active = null    
     
-    add: (block) ->
-        @blocks.push(block)
-        return
-    
-    wait: (name, fn) ->
-        @waiting++
-    
-        if name == undefined or typeof name == 'function'
-            fn = name
-            name = ++@id
+    class line.Line extends events.EventEmitter
+        constructor: (parent, listeners) -> # fns...
+            blocks = Array.prototype.slice.call(arguments)
             
-        else if name == true
-            name = ++@id
-            @resultId = name
-    
-        return =>
-            @waiting--
-            return if @stopped
-
-            args = Array.prototype.slice.call(arguments)
-            
-            if args[0]
-                @fail.apply(this, args)
-            
+            if typeof parent == null or parent instanceof line.Line
+                blocks.shift()
             else
-                # Shift off the error arg
-                args.shift()
+                listeners = parent
+                parent = null
+                
+            if typeof listeners == 'object'
+                blocks.shift()
+            else
+                listeners = {}
+            
+            # See whether the blocks were passed as an array
+            if blocks.length and typeof blocks[0] isnt 'function'
+                blocks = blocks[0]
+            
+            @parent = parent
+            @blocks = []
+            @waiting = 0
+            @stopped = false
+            @results = {}
+            @id = 0
+            
+            for event, listener of listeners
+                @on event, listener
 
-                if name != null
-                    @results[name] = args
+            @add(blocks)
+            
+            if @parent
+                done = @parent.wait()
+                @once 'end', ->
+                    args = Array.prototype.slice.call(arguments)
+                    args.unshift(null)
+                    done.apply(this, args)
+        
+        add: (blocks) ->
+            if typeof blocks is 'function'
+                blocks = Array.prototype.slice.call(arguments)
+            
+            for block in blocks
+                @blocks.push(block)
+                
+                # See if we need to restart the line
+                if @blocks.length == 1
+                    process.nextTick => @next()
+            
+            return @
+    
+        wait: (name, fn) ->
+            @waiting++
+    
+            if name == undefined or typeof name == 'function'
+                fn = name
+                name = ++@id
+            
+            else if name == true
+                name = ++@id
+                @resultId = name
+
+            return =>
+                @waiting--
+                return if @stopped
+
+                args = Array.prototype.slice.call(arguments)
+            
+                if args[0]
+                    # Emit the error
+                    @_bubble('error', args)
+            
+                else
+                    # Shift off the first arg
+                    args.shift()
+
+                    @_bubble('result', args)
+
+                    if name != null
+                        @results[name] = args
+
+                    try
+                        line.active = @
+                        fn.apply(@, args) if fn
+                        line.active = null
+                    
+                    catch e
+                        @_bubble('error', [e])
+                
+                    # The line may be stopped in fn
+                    @next() if not @waiting and not @stopped 
+
+        next: ->
+            @stopped = false
+            
+            args = @results[@resultId or @id]
+            @resultId = null
+
+            if not @blocks.length
+                @emit.apply(@, ['end'].concat(args))
+                
+            else
+                block = @blocks.shift()
+                done = @wait()
             
                 try
-                    _running = this
-                    fn.apply(this, args) if fn
-                    _running = null
-                    
+                    line.active = @
+                    result = block.apply(@, args)
+                    line.active = null
+
+                    done(null, result)
+                
                 catch e
-                    @fail(e)
-                
-                # The line may be stopped in fn
-                @next() if not @waiting and not @stopped 
-
-    fail: (err) ->
-        args = Array.prototype.slice.call(arguments)
-        @stopped = true
-        
-        if err instanceof Error
-            console.log(err.stack)
-        else
-            console.log(args)
-
-        error = @error
-        parent = @parent
-        
-        while not error and parent
-            error = parent.error
-            parent = parent.parent
-    
-        if error
-            error.apply(this, args)
-    
-    end: (fn) ->
-        @stopped = true
-        @blocks = @blocks.slice(-1)
-        @next(fn)
-        
-        return
-    
-    next: (fn) ->
-        args = @results[@resultId or @id]
-        @resultId = null
-
-        if @blocks.length
-            block = @blocks.shift()
-            done = @wait(fn)
+                    done(e)
             
-            try
-                _running = this
-                result = block.apply(this, args)
-                _running = null
+            return
+    
+        fail: ->
+            args = Array.prototype.slice.call(arguments)
+            @_bubble('error', args)
+            return
+            
+        stop: ->
+            @stopped = true
+            args = Array.prototype.slice.call(arguments)
+            @_bubble('stop', args)
+            return
 
-                done(null, result)
-                
-            catch e
-                done(e)
-    
+        _bubble: (event, args) ->
+            args = [event].concat(args)
+            
+            if not @_events or not @_events[event]
+                cur = @
+                while (cur = cur.parent)
+                    if cur._events and cur._events[event]
+                        if cur.emit.apply(cur, args) != true
+                            return
+            
+            @emit.apply(@, args)
+
+
+    # Deprecated API
+    _context = null
+    line.add = () ->
+        _context = new line.Line(line.active) if not _context
+        _context.add.apply(_context, arguments)
         return
-    
-    run: (fn) ->
+
+    line.error = (listener) ->
+        _context = new line.Line(line.active) if not _context
+        _context.on 'error', listener
+        return
+
+    line.run = () ->
+        _context = new line.Line(line.active) if not _context
+        _context.add.apply(_context, arguments)
         _context = null
-        
-        @add fn if fn
-        
-        if @parent
-            done = @parent.wait()
-            @add =>
-                args = Array.prototype.slice.call(arguments)
-                args.unshift(null)
-                done.apply(this, args)
-        
-        process.nextTick => @next()
         return
-        
-line.add = (fn) ->
-    _context = new line(_running) if not _context
-    _context.add(fn)
-    return
 
-line.error = (fn) ->
-    _context = new line(_running) if not _context
-    _context.error = fn
-    return
+    line.wait = (fn) -> line.active.wait(fn)
+    line.fail = -> line.active.fail.apply(line.active, arguments)
+    line.stop = -> line.active.stop.apply(line.active, arguments)
 
-line.run = (fn) ->
-    _context = new line(_running) if not _context
-    _context.run(fn)
-    return
-
-line.wait = (fn) -> _running.wait(fn)
-line.end = (fn) -> _running.end(fn)
-line.fail = -> _running.fail.apply(_running, arguments)
-
-module.exports = line
+    return line
+)

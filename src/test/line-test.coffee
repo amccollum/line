@@ -16,97 +16,54 @@ echo = (val, fn) ->
     process.nextTick ->
         fn(null, val)
 
+
 vows.add 'line'
-    'simple test':
-        topic: []
-        'the result array should start out empty': (results) -> equal results.length, 0
-        
-        'the 10ms result':
-            topic: (results) ->
-                line =>
-                    timeout 10, line.wait =>
-                        results.push(0)
-                        @success(results)
-            
-            'should be first': (results) -> equal results[0], 0
-            
-        'the 100ms result':
-            topic: (results) ->
-                line.add =>
-                    timeout 100, line.wait =>
-                        results.push(1)
-                        @success(results)
-            
-            'should be second': (results) -> equal results[1], 1
-
-        'the 50ms result':
-            topic: (results) ->
-                line =>
-                    timeout 50, line.wait =>
-                        results.push(2)
-                        @success(results)
-            
-            'should be third': (results) -> equal results[2], 2
-            
-        'should still be empty': (results) -> equal results.length, 0
-        
-        'running the q':
-            topic: (results) ->
-                line.run =>
-                    @success(results)
-                    
-            'should add all the results': (results) -> equal results.length, 3
-
     'nested lines':
-        topic: []
-        'with nested lines':
-            topic: (results) ->
-                line =>
-                    process.nextTick line.wait =>
-                        results.push(0)
-                        
-                    line =>
-                        process.nextTick line.wait =>
-                            results.push(2)
+        topic: () ->
+            results = []
+            l = new line.Line null,
+                =>
+                    timeout 10, l.wait => results.push(0)
+                    
+                    l2 = new line.Line l,
+                        => timeout 30, l2.wait => results.push(2)
+                        => timeout 10, l2.wait => results.push(3)
 
-                    line =>
-                        process.nextTick line.wait =>
-                            results.push(3)
+                    timeout 20, l.wait => results.push(1)
 
-                    line.run()
-
-                    process.nextTick line.wait =>
-                        results.push(1)
-
-                line =>
-                    process.nextTick line.wait =>
+                =>
+                    timeout 10, l.wait =>
                         results.push(4)
-                
-                line.run =>
-                    @success(results)
             
-            'should have all the results in the right order': (results) ->
-                equal results[0], 0
-                equal results[1], 1
-                equal results[2], 2
-                equal results[3], 3
-                equal results[4], 4
+                => @success(results)
+                
+            return
+        
+        'should have all the results in the right order': (results) ->
+            equal results[0], 0
+            equal results[1], 1
+            equal results[2], 2
+            equal results[3], 3
+            equal results[4], 4
 
     'arguments to wait()':
         topic: ->
             success = @success
             
-            line ->
-                echo 1, line.wait('a')
-                echo 2, line.wait()
-                echo 3, line.wait(true)
-                echo 4, line.wait('b')
-                echo 5, line.wait('c')
-                echo 6, line.wait()
+            new line.Line null,
+                ->
+                    echo 1, @wait('a')
+                    echo 2, @wait()
+                    echo 3, @wait(true)
+                    echo 4, @wait('b')
+                    echo 5, @wait('c')
+                    echo 6, @wait()
                 
-            line (result) -> @results['test'] = result
+                (result) -> @results['test'] = result
 
-            line.run -> success(@results)
+                -> success(@results)
+        
+            return
         
         'should be added correctly': (results) ->
             equal results['a'], 1
@@ -117,39 +74,88 @@ vows.add 'line'
             equal results[4], 6
             equal results['test'], 3
 
-    'nested lines':
+    'stopping a line':
         topic: ->
             success = @success
+            results = []
             
-            result = []
-            line ->
-                result.push(0)
+            new line.Line null,
+                -> timeout 10, @wait -> results.push(1)
+                -> timeout 10, @wait -> results.push(2)
+                -> @stop()
+                -> timeout 10, @wait -> results.push(3)
+                -> success(results)
+        
+            return
+        
+        'should prevent the rest of the blocks from running': (results) ->
+            equal results.length, 2
+            equal results[0], 1
+            equal results[1], 2
+
+    'more nested lines':
+        topic: ->
+            success = @success
+            results = []
+            
+            new line.Line null,
+                ->
+                    results.push(0)
                 
-                line -> echo 1, line.wait()
-                line (one) -> echo 2, line.wait()
-                line (two) -> echo 3, line.wait()
-                line.run (three) =>
-                    result.push(2)
-                    return three
+                    new line.Line @,
+                        -> echo 1, @wait()
+                        (one) -> echo 2, @wait()
+                        (two) -> echo 3, @wait()
+                        (three) ->
+                            results.push(2)
+                            return three
                     
-                result.push(1)
-                return
+                    results.push(1)
+                    return
                     
-            line (three) ->
-                result.push(three)
-                
-            line ->
-                result.push(4)
-                
-            line.run ->
-                success(result)
-                
+                (three) -> results.push(three)
+                -> results.push(4)
+                -> success(results)
+            
+            return
+            
         'should make their parents wait ': (result) ->
+            equal result[0], 0
+            equal result[1], 1
+            equal result[2], 2
             equal result[4], 4
             
         'should be able to pass on results': (result) ->
+            equal result[3], 3
+
+    'old api':
+        topic: ->
+            success = @success
+            results = []
+            
+            line.add ->
+                results.push(0)
+            
+                line.add -> echo 1, @wait()
+                line.add (one) -> echo 2, @wait()
+                line.add (two) -> echo 3, @wait()
+                line.run (three) ->
+                    results.push(2)
+                    return three
+                
+                
+                results.push(1)
+                return
+                
+            line.add (three) -> results.push(three)
+            line.add -> results.push(4)
+            line.run -> success(results)
+            
+            return
+            
+        'should get the same results ': (result) ->
             equal result[0], 0
             equal result[1], 1
             equal result[2], 2
             equal result[3], 3
-
+            equal result[4], 4
