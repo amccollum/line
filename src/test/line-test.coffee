@@ -93,6 +93,25 @@ vows.add 'line'
             equal results[0], 1
             equal results[1], 2
 
+    'true/false callbacks':
+        topic: ->
+            results = []
+            success = @success
+            
+            trueFn = (cb) -> process.nextTick -> cb(true)
+            falseFn = (cb) -> process.nextTick -> cb(false)
+            
+            new line.Line null,
+                -> trueFn @wait (result) -> results.push(result)
+                -> falseFn @wait (result) -> results.push(result)
+                -> success(results)
+        
+            return
+        
+        'should not trigger errors': (results) ->
+            equal results[0], true
+            equal results[1], false
+
     'more nested lines':
         topic: ->
             success = @success

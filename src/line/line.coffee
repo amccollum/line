@@ -60,7 +60,7 @@
                     process.nextTick => @next()
             
             return @
-    
+            
         wait: (name, fn) ->
             @waiting++
     
@@ -77,6 +77,10 @@
                 return if @stopped
 
                 args = Array.prototype.slice.call(arguments)
+                
+                # Check the special case of boolean true/false
+                if args.length == 1 and typeof args[0] is 'boolean'
+                    args.unshift(null)
             
                 if args[0]
                     # Emit the error
@@ -99,7 +103,7 @@
                     catch e
                         @_bubble('error', [e])
                 
-                    # The line may be stopped in fn
+                    # The line may wait or be stopped in fn
                     @next() if not @waiting and not @stopped 
 
         next: ->
