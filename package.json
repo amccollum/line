@@ -1,18 +1,34 @@
 {
-    "name": "line",
-    "version": "0.1.4",
-    "description": "Control flow like a boss",
-    "keywords": ["ender", "flow", "control", "async"],
-    "author": "Andrew McCollum <amccollum@gmail.com>",
-    "url": "http://github.com/amccollum/line",
-    "repositories": [{ "type": "git", "url": "http://github.com/amccollum/line.git" }],
-    "licenses": [{ "type": "MIT", "url": "http://opensource.org/licenses/mit-license.php" }],
-
-    "main": "lib/line.js",
-    "ender": "noop",
-    "directories": { "lib": "lib" },
-    "devDependencies": {
-        "coffee-script": "*",
-        "ender-vows": "*"
+  "name": "line",
+  "version": "0.1.5",
+  "description": "Control flow like a boss",
+  "keywords": [
+    "ender",
+    "flow",
+    "control",
+    "async"
+  ],
+  "author": "Andrew McCollum <amccollum@gmail.com>",
+  "url": "http://github.com/amccollum/line",
+  "repositories": [
+    {
+      "type": "git",
+      "url": "http://github.com/amccollum/line.git"
     }
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/mit-license.php"
+    }
+  ],
+  "main": "lib/line.js",
+  "ender": "noop",
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {
+    "coffee-script": "*",
+    "ender-vows": "*"
+  }
 }
