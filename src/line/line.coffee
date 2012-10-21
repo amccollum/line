@@ -1,4 +1,4 @@
-!((name, definition) ->
+((name, definition) ->
     if typeof module == 'object' and module.exports then module.exports = definition()
     else if typeof define == 'function' and define.amd then define(name, definition)
     else @[name] = definition()
