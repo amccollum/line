@@ -23,7 +23,10 @@
     }
   ],
   "main": "lib/line.js",
-  "ender": "noop",
+  "ender": {
+      "bridge": "noop",
+      "dependencies": "ender-events"
+  },
   "directories": {
     "lib": "lib"
   },
