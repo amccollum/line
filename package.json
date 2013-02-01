@@ -1,6 +1,6 @@
 {
   "name": "line",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Control flow like a boss",
   "keywords": [
     "ender",
@@ -28,7 +28,7 @@
     "lib": "lib"
   },
   "dependencies": {
-      "ender-events" : "*"
+    "ender-events": "*"
   },
   "devDependencies": {
     "coffee-script": "*",
