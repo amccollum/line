@@ -1,6 +1,6 @@
 {
   "name": "line",
-  "version": "0.1.6",
+  "version": "0.1.5",
   "description": "Control flow like a boss",
   "keywords": [
     "ender",
@@ -23,12 +23,12 @@
     }
   ],
   "main": "lib/line.js",
-  "ender": {
-    "bridge": "noop",
-    "dependencies": "ender-events"
-  },
+  "ender": "noop",
   "directories": {
     "lib": "lib"
+  },
+  "dependencies": {
+      "ender-events" : "*"
   },
   "devDependencies": {
     "coffee-script": "*",
