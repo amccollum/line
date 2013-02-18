@@ -57,7 +57,7 @@
                 
                 # See if we need to restart the line
                 if @blocks.length == 1
-                    process.nextTick => @next()
+                    setTimeout (=> @next(); return), 0
             
             return @
             
