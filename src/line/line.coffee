@@ -57,7 +57,7 @@
                 
                 # See if we need to restart the line
                 if @blocks.length == 1
-                    setTimeout (=> @next(); return), 0
+                    setTimeout((=> @next(); return), 0)
             
             return @
             
